@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+out/
+
+# Editor / IDE
+.vscode/
+
+# TypeScript
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.vite/
