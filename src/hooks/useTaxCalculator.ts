@@ -10,10 +10,10 @@ import { getDefaultYear } from '../lib/yearUtils';
 
 export const DEFAULT_INPUTS: TaxInputs = {
   taxYear: getDefaultYear(),
-  filingStatus: 'single',
-  dependents: 0,
+  filingStatus: 'mfj',
+  dependents: 2,
   age65Plus: false,
-  age50Plus: false,
+  age50Plus: true,
   blind: false,
   wages: 0,
   isSelfEmployed: false,
