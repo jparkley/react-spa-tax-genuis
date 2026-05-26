@@ -2,8 +2,8 @@
 
 ## Income Tax Calculator — Federal & California State (Single-Page React/TypeScript App)
 
-**Version:** 1.1  
-**Date:** May 25, 2026  
+**Version:** 1.2
+**Date:** May 25, 2026
 **Status:** Draft
 
 ---
@@ -35,6 +35,7 @@ This document defines the business requirements for a single-page React/TypeScri
 - Capital gains tax differentiation (long-term vs. short-term rates)
 - Self-employment tax (optional toggle)
 - Child Tax Credit (CTC) — applied against federal income tax liability
+- Traditional IRA contribution deduction with age-based contribution limits (standard limit for under 50; catch-up limit for age 50 and older) and deductibility phase-out based on income and workplace plan coverage
 - **Dynamic tax year support:** The app begins at tax year 2026 and automatically includes the current year plus the next 7 calendar years. The available year range is derived at runtime so no code changes are required as years advance.
 - Real-time recalculation on any input change (no "Calculate" button required)
 - Responsive layout for desktop and tablet
@@ -76,6 +77,7 @@ Because the audience is known and technically comfortable, the UI may assume bas
 | FR-03 | Number of dependents   | Integer input (≥ 0); used for Child Tax Credit calculation                                                                                                                                                       |
 | FR-04 | Age toggle (65+)       | Affects standard deduction (additional amount for seniors)                                                                                                                                                       |
 | FR-05 | Blind taxpayer toggle  | Additional standard deduction for blind filers (IRS rules)                                                                                                                                                       |
+| FR-06 | Age 50+ toggle         | Indicates the taxpayer is age 50 or older. Enables the IRA catch-up contribution limit for the selected tax year (e.g., $8,000 vs. $7,000 in 2026). Independent of FR-04; a filer who is 65+ is implicitly 50+ and both flags may be true simultaneously. For MFJ filers, this toggle applies to the primary taxpayer; per-spouse age tracking is out of scope for v1.0. |
 
 ### 5.2 Input Panel — Income
 
@@ -84,9 +86,11 @@ Because the audience is known and technically comfortable, the UI may assume bas
 | FR-10 | Gross wages / salary (W-2)    | Primary income field; numeric, formatted with commas                                                           |
 | FR-11 | Self-employment income toggle | When enabled, shows net self-employment income field and applies SE tax                                        |
 | FR-12 | Other taxable income          | Field for interest, dividends, alimony, etc. (treated as ordinary income)                                      |
-| FR-13 | Pre-tax deductions            | 401(k), HSA, FSA contributions that reduce federal AGI                                                         |
+| FR-13 | Pre-tax deductions            | 401(k), HSA, FSA contributions that reduce federal AGI. Does not include Traditional IRA (handled separately in FR-16). |
 | FR-14 | Long-term capital gains       | Separate income field; taxed at preferential LTCG rates (0%, 15%, 20%) based on total income and filing status |
 | FR-15 | Short-term capital gains      | Separate income field; treated as ordinary income and taxed at standard bracket rates                          |
+| FR-16 | Traditional IRA contribution  | Numeric input for the taxpayer's Traditional IRA contribution for the tax year. The UI enforces the annual contribution limit: standard limit for age < 50 (e.g., $7,000 in 2026); catch-up limit for age 50+ (e.g., $8,000 in 2026), driven by FR-06 and the limit stored in tax data. Contribution is deducted from AGI subject to the deductibility phase-out rules in FR-17. Tooltip explains contribution limits and phase-out. |
+| FR-17 | Workplace retirement plan coverage toggle | Checkbox indicating whether the taxpayer is covered by an employer-sponsored retirement plan (401(k), 403(b), SIMPLE IRA, pension, etc.). When enabled, the Traditional IRA deduction is phased out based on MAGI and filing status per IRS rules. When disabled (no workplace plan), the full contribution is deductible regardless of income. Phase-out thresholds are stored per tax year in tax data. |
 
 ### 5.3 Input Panel — Deductions
 
@@ -107,7 +111,7 @@ Because the audience is known and technically comfortable, the UI may assume bas
 
 | ID     | Requirement                         | Notes                                                                                                           |
 | ------ | ----------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| FR-30  | Adjusted Gross Income (AGI)         | Gross income (wages + ordinary income + STCG + LTCG) minus pre-tax deductions                                   |
+| FR-30  | Adjusted Gross Income (AGI)         | Gross income (wages + ordinary income + STCG + LTCG) minus pre-tax deductions minus deductible Traditional IRA contribution (FR-16, subject to phase-out per FR-17) |
 | FR-31  | Federal taxable income              | AGI minus applicable deduction                                                                                  |
 | FR-32  | Federal income tax (before credits) | Calculated from applicable bracket table on ordinary income + STCG; LTCG taxed separately at preferential rates |
 | FR-32a | LTCG tax                            | Computed separately using LTCG rate schedule for the selected year and filing status                            |
@@ -198,25 +202,36 @@ Structure: TaxBracket[] = { rate: number; min: number; max: number | null }[]
 
 ### 7.2 Calculation Order (Federal)
 
+> **Pre-computation (no AGI dependency):** If SE income > 0, compute SE tax = 92.35% × net SE income × 15.3%. This value is needed in step 3 and step 13. SE tax does not depend on AGI, so it is safe to derive before AGI is finalized.
+
 1. Compute gross income: W-2 wages + STCG + LTCG + other income + SE income
-2. Subtract pre-tax deductions (401k, HSA) → **AGI**
-3. If SE income > 0: subtract ½ of SE tax from AGI
-4. Subtract standard or itemized deduction → **Federal Taxable Income**
-5. Separate taxable income into ordinary income stack and LTCG stack
-6. Apply progressive bracket table to ordinary income + STCG → **Ordinary Income Tax**
-7. Apply LTCG rate schedule (0% / 15% / 20%) to LTCG amount based on total income and filing status → **LTCG Tax**
-8. Compute Child Tax Credit per IRS rules (phase-out begins at $200K single / $400K MFJ for selected year); subtract from combined tax; floor at $0
-9. Compute SS tax: 6.2% × min(W-2 wages, annual wage base for selected year)
-10. Compute Medicare: 1.45% × earned income; +0.9% Additional Medicare on amount exceeding threshold
-11. If SE: compute SE tax (92.35% of net SE × 15.3%)
+2. Subtract pre-tax deductions (401(k), HSA, FSA) → **pre-IRA AGI**
+3. If SE income > 0: subtract ½ of the pre-computed SE tax from pre-IRA AGI (IRS above-the-line deduction; value comes from the pre-computation above)
+4. Compute Traditional IRA deductible amount:
+   a. Determine contribution limit: standard limit if age < 50 (FR-06 off); catch-up limit if age 50+ (FR-06 on) — both limits loaded from tax data for the selected year
+   b. Cap user-entered IRA contribution (FR-16) at the applicable limit
+   c. Determine MAGI for IRA phase-out purposes: MAGI = pre-IRA AGI (i.e., AGI after ½ SE deduction but before the IRA deduction itself — this matches the IRS definition of MAGI for Traditional IRA deductibility)
+   d. If workplace plan coverage (FR-17) is enabled: compute the phase-out fraction using MAGI from step 4c and the filing-status phase-out range from tax data (e.g., for 2026 single with workplace plan: $79,000–$89,000); reduce the capped contribution linearly across the range; floor deductible amount at $0
+   e. If workplace plan coverage is disabled: full capped contribution is deductible regardless of income
+5. Subtract deductible IRA amount from pre-IRA AGI → **AGI**
+6. Subtract standard or itemized deduction → **Federal Taxable Income**
+7. Separate Federal Taxable Income into two stacks for tax computation:
+   - **Ordinary income stack:** Federal Taxable Income minus LTCG
+   - **LTCG stack:** LTCG portion (stacked on top of the ordinary income stack to determine applicable LTCG rate bracket — the 0%/15%/20% boundary is tested against *total* taxable income including LTCG, not ordinary income alone)
+8. Apply progressive bracket table to ordinary income stack (includes STCG, which is taxed as ordinary income) → **Ordinary Income Tax**
+9. Apply LTCG rate schedule to the LTCG stack: the applicable rate (0%, 15%, or 20%) is determined by where (ordinary income + LTCG) falls within the LTCG bracket thresholds for the filing status and selected year → **LTCG Tax**
+10. Compute Child Tax Credit: phase-out is based on **AGI** (from step 5) — phase-out begins at $200K (single) / $400K (MFJ) for the selected year; subtract computed credit from (Ordinary Income Tax + LTCG Tax); floor result at $0
+11. Compute SS tax: 6.2% × min(W-2 wages, annual SS wage base for selected year)
+12. Compute Medicare tax: 1.45% × (W-2 wages + net SE income); add 0.9% Additional Medicare Tax on the portion of (W-2 wages + net SE income) exceeding the threshold for the filing status (e.g., $200K single / $250K MFJ)
+13. Report SE tax from pre-computation above as a separate line item in results
 
 ### 7.3 Calculation Order (California)
 
-1. Start from Federal AGI (CA conformity basis; MVP does not apply CA-specific add-backs)
+1. Start from Federal AGI (CA conformity basis; the Traditional IRA deduction computed in §7.2 step 5 carries through because CA conforms to the federal treatment of deductible Traditional IRA contributions. MVP does not apply other CA-specific add-backs.)
 2. Subtract CA standard or itemized deduction → **CA Taxable Income**
 3. Apply CA progressive bracket table (10 brackets) for selected tax year → **CA Income Tax**
-4. If CA taxable income > $1,000,000: add 1% Mental Health Services Tax on excess
-5. Compute CA SDI using the rate stored for the selected tax year
+4. If CA taxable income > $1,000,000: add 1% Mental Health Services Tax on the excess above $1,000,000
+5. Compute CA SDI: apply the SDI rate for the selected year to **W-2 wages only** (CA SDI does not apply to SE income, capital gains, interest, dividends, or other non-wage income)
 
 ### 7.4 Data Structures (TypeScript)
 
@@ -243,6 +258,17 @@ interface ChildTaxCreditConfig {
   phaseOutRate: number; // reduction per $1,000 over threshold
 }
 
+interface IraConfig {
+  contributionLimit: number;          // standard limit (age < 50), e.g. 7000
+  catchUpContributionLimit: number;   // limit for age 50+, e.g. 8000
+  deductibilityPhaseOut: {
+    // Income range over which the IRA deduction is phased out when covered by workplace plan
+    withWorkplacePlan: Record<FilingStatus, { start: number; end: number }>;
+    // When not covered by workplace plan but spouse is (MFJ only); null for other statuses
+    spouseHasWorkplacePlan: Partial<Record<FilingStatus, { start: number; end: number }>>;
+  };
+}
+
 interface YearTaxData {
   year: TaxYear;
   isProjected: boolean; // true if not yet officially published
@@ -254,6 +280,7 @@ interface YearTaxData {
     additionalMedicareThreshold: Record<FilingStatus, number>;
     ltcgBrackets: Record<FilingStatus, LtcgBracket[]>;
     childTaxCredit: ChildTaxCreditConfig;
+    ira: IraConfig;
   };
   california: {
     brackets: Record<FilingStatus, TaxBracket[]>;
@@ -272,6 +299,7 @@ interface TaxInputs {
   filingStatus: FilingStatus;
   dependents: number;
   age65Plus: boolean;
+  age50Plus: boolean;              // true if taxpayer is age 50 or older (enables IRA catch-up limit)
   blind: boolean;
   wages: number;
   isSelfEmployed: boolean;
@@ -280,12 +308,16 @@ interface TaxInputs {
   shortTermCapitalGains: number;
   longTermCapitalGains: number;
   preTaxDeductions: number;
+  traditionalIraContribution: number;     // user-entered IRA contribution amount (FR-16)
+  hasWorkplaceRetirementPlan: boolean;    // affects IRA deductibility phase-out (FR-17)
   useItemizedDeductions: boolean;
   itemizedDeductionTotal: number;
 }
 
 interface TaxResults {
   grossIncome: number;
+  iraContributionLimit: number;          // effective limit for the year (standard or catch-up)
+  deductibleIraAmount: number;           // actual deductible portion after phase-out
   agi: number;
   federalTaxableIncome: number;
   ordinaryIncomeTax: number;
@@ -374,6 +406,8 @@ The Capital Gains sub-section under Income is collapsed by default and expands w
 | CA income tax brackets                | FTB (indexed for inflation annually)                 | Annually         |
 | CA standard deduction                 | FTB (relatively static)                              | As changed       |
 | CA SDI rate                           | EDD announcement                                     | Annually         |
+| Traditional IRA contribution limits   | IRS Rev. Proc. (catch-up limit set by SECURE 2.0 with inflation indexing beginning 2024) | Annually |
+| Traditional IRA deductibility phase-out thresholds | IRS Rev. Proc. (inflation-adjusted annually) | Annually |
 
 **Maintenance requirement:** All per-year tax data is isolated in `/src/data/taxData.ts` as entries in a `TaxDataMap`. Adding a new tax year requires only appending a new `YearTaxData` object — no changes to calculation logic, UI components, or the year selector (which is derived at runtime).
 
@@ -414,6 +448,9 @@ The application must display a persistent, visible disclaimer:
 - Year-over-year comparison view
 - Mobile-optimized layout (< 768px)
 - Automatic bracket inflation projection for future years (CPI-based estimates)
+- Roth IRA contribution tracking and income phase-out display (does not reduce AGI but useful for planning)
+- Per-spouse age and IRA tracking for Married Filing Jointly filers
+- Non-deductible Traditional IRA basis tracking (Form 8606 scenario)
 
 ---
 
@@ -436,6 +473,11 @@ The application must display a persistent, visible disclaimer:
 | AC-13 | Disclaimer is permanently visible                                                                                              |
 | AC-14 | App builds without TypeScript errors in strict mode                                                                            |
 | AC-15 | All result fields display $0 gracefully when income fields are empty                                                           |
+| AC-16 | When age 50+ toggle (FR-06) is off, the IRA contribution input enforces the standard contribution limit for the selected year  |
+| AC-17 | When age 50+ toggle (FR-06) is on, the IRA contribution input enforces the catch-up contribution limit for the selected year   |
+| AC-18 | With workplace plan coverage enabled and AGI within the phase-out range, the deductible IRA amount is correctly prorated       |
+| AC-19 | With workplace plan coverage disabled, the full IRA contribution (up to the applicable limit) is deducted from AGI             |
+| AC-20 | AGI reflects the deductible IRA amount; federal and CA taxable income both reflect the updated AGI                             |
 
 ---
 
