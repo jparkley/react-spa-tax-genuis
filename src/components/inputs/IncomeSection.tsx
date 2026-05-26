@@ -113,10 +113,10 @@ export function IncomeSection({ inputs, setField, iraContributionLimit }: Income
       </div>
 
       <Toggle
-        label="Covered by Workplace Retirement Plan"
+        label="Wife has 401(k) through work (husband does not)"
         checked={inputs.hasWorkplaceRetirementPlan}
         onChange={(v) => setField('hasWorkplaceRetirementPlan', v)}
-        helpText="401(k), 403(b), SIMPLE IRA, pension, etc. Affects IRA deductibility phase-out."
+        helpText="Since only one spouse has a workplace plan, husband's IRA is fully deductible if MAGI ≤ $242,000 (2026)."
       />
     </SectionCard>
   );
