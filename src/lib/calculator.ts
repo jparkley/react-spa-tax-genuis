@@ -390,6 +390,8 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
     overallEffectiveRate,
     afterTaxIncome,
     monthlyTakeHome,
+    federalDeductionUsed: federalDeduction,
+    federalDeductionType: useItemizedDeductions ? 'itemized' : 'standard',
     federalOrdinaryBracketDetails,
     caBracketDetails,
     isProjectedYear: yearData.isProjected,

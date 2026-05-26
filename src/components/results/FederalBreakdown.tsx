@@ -19,7 +19,19 @@ export function FederalBreakdown({ results }: FederalBreakdownProps) {
       {results.deductibleIraAmount > 0 && (
         <ResultRow label="IRA Deduction Applied" value={results.deductibleIraAmount} sub />
       )}
-      <ResultRow label="Federal Taxable Income" value={results.federalTaxableIncome} />
+      <TaxLineWithBrackets
+        label="Federal Taxable Income"
+        value={results.federalTaxableIncome}
+        bracketDetails={[]}
+        extras={[
+          { label: 'AGI', value: results.agi },
+          {
+            label: `− ${results.federalDeductionType === 'standard' ? 'Standard deduction' : 'Itemized deductions'}`,
+            value: results.federalDeductionUsed,
+          },
+          { label: '= Federal Taxable Income', value: results.federalTaxableIncome, bold: true },
+        ]}
+      />
 
       <div className="border-t border-gray-100 my-1" />
 

@@ -124,6 +124,9 @@ export interface TaxResults {
   overallEffectiveRate: number;
   afterTaxIncome: number;
   monthlyTakeHome: number;
+  /** Deduction amount applied to reach federal taxable income */
+  federalDeductionUsed: number;
+  federalDeductionType: 'standard' | 'itemized';
   /** Per-bracket breakdown for the federal ordinary income tax */
   federalOrdinaryBracketDetails: BracketDetail[];
   /** Per-bracket breakdown for the CA income tax */
