@@ -3,8 +3,9 @@ import { CurrencyInput } from '../ui/CurrencyInput';
 import { Toggle } from '../ui/Toggle';
 import { Tooltip } from '../ui/Tooltip';
 import { CapitalGainsSection } from './CapitalGainsSection';
+import { IraReferencePanel } from './IraReferencePanel';
 import { formatCurrency } from '../../lib/formatters';
-import type { TaxInputs } from '../../types/tax.types';
+import type { TaxInputs, FilingStatus } from '../../types/tax.types';
 
 interface IncomeSectionProps {
   inputs: Pick<
@@ -24,9 +25,12 @@ interface IncomeSectionProps {
   >;
   setField: <K extends keyof TaxInputs>(field: K, value: TaxInputs[K]) => void;
   iraContributionLimit: number;
+  magi: number;
+  filingStatus: FilingStatus;
+  rothPhaseOut: { start: number; end: number };
 }
 
-export function IncomeSection({ inputs, setField, iraContributionLimit }: IncomeSectionProps) {
+export function IncomeSection({ inputs, setField, iraContributionLimit, magi, filingStatus, rothPhaseOut }: IncomeSectionProps) {
   return (
     <SectionCard title="Income">
       <CurrencyInput
@@ -117,6 +121,13 @@ export function IncomeSection({ inputs, setField, iraContributionLimit }: Income
         checked={inputs.hasWorkplaceRetirementPlan}
         onChange={(v) => setField('hasWorkplaceRetirementPlan', v)}
         helpText="Since only one spouse has a workplace plan, husband's IRA is fully deductible if MAGI ≤ $242,000 (2026)."
+      />
+
+      <IraReferencePanel
+        magi={magi}
+        iraContributionLimit={iraContributionLimit}
+        filingStatus={filingStatus}
+        rothPhaseOut={rothPhaseOut}
       />
     </SectionCard>
   );

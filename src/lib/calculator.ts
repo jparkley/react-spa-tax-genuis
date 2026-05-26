@@ -364,6 +364,7 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
 
   return {
     grossIncome,
+    magi: afterSeAgi,
     iraContributionLimit,
     deductibleIraAmount,
     agi,

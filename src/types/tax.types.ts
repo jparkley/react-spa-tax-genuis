@@ -29,6 +29,11 @@ export interface ChildTaxCreditConfig {
   phaseOutRate: number;
 }
 
+export interface RothIraConfig {
+  /** MAGI phase-out range for Roth IRA contributions, by filing status */
+  contributionPhaseOut: Record<FilingStatus, { start: number; end: number }>;
+}
+
 export interface IraConfig {
   /** Standard limit (age < 50), e.g. 7000 */
   contributionLimit: number;
@@ -59,6 +64,7 @@ export interface YearTaxData {
     ltcgBrackets: Record<FilingStatus, LtcgBracket[]>;
     childTaxCredit: ChildTaxCreditConfig;
     ira: IraConfig;
+    rothIra: RothIraConfig;
   };
   california: {
     brackets: Record<FilingStatus, TaxBracket[]>;
@@ -96,6 +102,8 @@ export interface TaxInputs {
 
 export interface TaxResults {
   grossIncome: number;
+  /** MAGI for IRA purposes = gross income − pre-tax deductions − ½ SE tax (before IRA deduction) */
+  magi: number;
   /** Effective IRA contribution limit (standard or catch-up) */
   iraContributionLimit: number;
   /** Actual deductible IRA amount after phase-out */

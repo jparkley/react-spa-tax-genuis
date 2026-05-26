@@ -165,6 +165,15 @@ export const taxData2026: YearTaxData = {
       },
       phaseOutRate: 50, // $50 reduction per $1,000 over threshold (ceiling division)
     },
+    rothIra: {
+      contributionPhaseOut: {
+        single: { start: 150000, end: 165000 },
+        mfj:    { start: 236000, end: 246000 },
+        mfs:    { start: 0,      end: 10000  },
+        hoh:    { start: 150000, end: 165000 },
+        qss:    { start: 236000, end: 246000 },
+      },
+    },
     ira: {
       contributionLimit:      7000,
       catchUpContributionLimit: 8000,
