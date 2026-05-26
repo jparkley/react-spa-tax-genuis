@@ -6,6 +6,7 @@ import type {
   LtcgBracket,
   FilingStatus,
   ChildTaxCreditConfig,
+  BracketDetail,
 } from '../types/tax.types';
 
 // ---------------------------------------------------------------------------
@@ -21,6 +22,29 @@ function applyBrackets(income: number, brackets: TaxBracket[]): number {
     tax += (Math.min(income, top) - bracket.min) * bracket.rate;
   }
   return tax;
+}
+
+// ---------------------------------------------------------------------------
+// Helper: progressive bracket tax with per-bracket detail
+// ---------------------------------------------------------------------------
+
+function applyBracketsWithDetails(
+  income: number,
+  brackets: TaxBracket[],
+): { tax: number; details: BracketDetail[] } {
+  if (income <= 0) return { tax: 0, details: [] };
+  let tax = 0;
+  const details: BracketDetail[] = [];
+  for (const bracket of brackets) {
+    if (income <= bracket.min) break;
+    const top = bracket.max ?? Infinity;
+    const inBracket = Math.min(income, top) - bracket.min;
+    if (inBracket <= 0) continue;
+    const taxInBracket = inBracket * bracket.rate;
+    tax += taxInBracket;
+    details.push({ rate: bracket.rate, incomeInBracket: inBracket, taxInBracket });
+  }
+  return { tax, details };
 }
 
 // ---------------------------------------------------------------------------
@@ -231,9 +255,11 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
   // -------------------------------------------------------------------
   // Step 8: Ordinary income tax (includes STCG — already in ordinary stack)
   // -------------------------------------------------------------------
-  const ordinaryIncomeTax = Math.round(
-    applyBrackets(ordinaryTaxableIncome, yearData.federal.brackets[filingStatus]),
-  );
+  const {
+    tax: rawOrdinaryIncomeTax,
+    details: federalOrdinaryBracketDetails,
+  } = applyBracketsWithDetails(ordinaryTaxableIncome, yearData.federal.brackets[filingStatus]);
+  const ordinaryIncomeTax = Math.round(rawOrdinaryIncomeTax);
 
   // -------------------------------------------------------------------
   // Step 9: LTCG tax (stacked on top of ordinary income)
@@ -300,9 +326,11 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
   const caTaxableIncome = Math.max(0, agi - caDeduction);
 
   // Step 3: CA income tax
-  const caIncomeTax = Math.round(
-    applyBrackets(caTaxableIncome, yearData.california.brackets[filingStatus]),
-  );
+  const {
+    tax: rawCaIncomeTax,
+    details: caBracketDetails,
+  } = applyBracketsWithDetails(caTaxableIncome, yearData.california.brackets[filingStatus]);
+  const caIncomeTax = Math.round(rawCaIncomeTax);
 
   // Step 4: CA Mental Health Services Tax
   const caMhThreshold = yearData.california.mentalHealthSurchargeThreshold;
@@ -362,6 +390,8 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
     overallEffectiveRate,
     afterTaxIncome,
     monthlyTakeHome,
+    federalOrdinaryBracketDetails,
+    caBracketDetails,
     isProjectedYear: yearData.isProjected,
   };
 }

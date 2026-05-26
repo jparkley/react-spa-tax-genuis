@@ -1,6 +1,7 @@
 import { SectionCard } from '../ui/SectionCard';
 import { ResultRow } from '../ui/ResultRow';
 import { Tooltip } from '../ui/Tooltip';
+import { TaxLineWithBrackets } from '../ui/TaxLineWithBrackets';
 import type { TaxResults } from '../../types/tax.types';
 
 interface FederalBreakdownProps {
@@ -37,10 +38,20 @@ export function FederalBreakdown({ results }: FederalBreakdownProps) {
           </span>
         </div>
       )}
-      <ResultRow
+      <TaxLineWithBrackets
         label="Federal Income Tax (after credits)"
         value={results.federalIncomeTaxAfterCredits}
         highlight
+        bracketDetails={results.federalOrdinaryBracketDetails}
+        extras={[
+          ...(results.ltcgTax > 0
+            ? [{ label: '+ LTCG tax', value: results.ltcgTax }]
+            : []),
+          ...(results.childTaxCredit > 0
+            ? [{ label: '− Child Tax Credit', value: results.childTaxCredit, prefix: '−' }]
+            : []),
+          { label: '= After credits', value: results.federalIncomeTaxAfterCredits, bold: true },
+        ]}
       />
 
       <div className="border-t border-gray-100 my-1" />

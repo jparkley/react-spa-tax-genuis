@@ -1,6 +1,7 @@
 import { SectionCard } from '../ui/SectionCard';
 import { ResultRow } from '../ui/ResultRow';
 import { Tooltip } from '../ui/Tooltip';
+import { TaxLineWithBrackets } from '../ui/TaxLineWithBrackets';
 import type { TaxResults } from '../../types/tax.types';
 
 interface CaliforniaBreakdownProps {
@@ -16,7 +17,11 @@ export function CaliforniaBreakdown({ results }: CaliforniaBreakdownProps) {
 
       <div className="border-t border-gray-100 my-1" />
 
-      <ResultRow label="CA Income Tax" value={results.caIncomeTax} />
+      <TaxLineWithBrackets
+        label="CA Income Tax"
+        value={results.caIncomeTax}
+        bracketDetails={results.caBracketDetails}
+      />
 
       {showMH && (
         <div className="flex items-center justify-between py-1">

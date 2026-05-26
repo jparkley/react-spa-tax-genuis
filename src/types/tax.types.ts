@@ -1,3 +1,9 @@
+export interface BracketDetail {
+  rate: number;
+  incomeInBracket: number;
+  taxInBracket: number;
+}
+
 // Dynamic year — not a fixed union
 export type TaxYear = number;
 
@@ -118,6 +124,10 @@ export interface TaxResults {
   overallEffectiveRate: number;
   afterTaxIncome: number;
   monthlyTakeHome: number;
+  /** Per-bracket breakdown for the federal ordinary income tax */
+  federalOrdinaryBracketDetails: BracketDetail[];
+  /** Per-bracket breakdown for the CA income tax */
+  caBracketDetails: BracketDetail[];
   /** Surfaces the projection flag from YearTaxData to the UI */
   isProjectedYear: boolean;
 }
