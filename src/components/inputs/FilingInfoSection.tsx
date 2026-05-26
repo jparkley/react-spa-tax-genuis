@@ -66,7 +66,7 @@ export function FilingInfoSection({ inputs, setField }: FilingInfoSectionProps) 
       {/* Dependents */}
       <div className="flex flex-col gap-1">
         <label htmlFor={dependentsId} className="text-sm text-gray-700">
-          Number of Qualifying Dependents (for CTC)
+          Number of Qualifying Dependents (for Child Tax Credit)
         </label>
         <input
           id={dependentsId}

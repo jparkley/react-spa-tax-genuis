@@ -31,6 +31,7 @@ export function IncomeSection({ inputs, setField, iraContributionLimit }: Income
         label="W-2 Wages / Salary"
         value={inputs.wages}
         onChange={(v) => setField('wages', v)}
+        helpText="From W-2 Box 1 — gross pay minus pre-tax deductions (401k, HSA, FSA, etc.). Note: in 2025, it was $122,800."
       />
 
       <Toggle
