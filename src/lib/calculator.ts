@@ -145,7 +145,9 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
     wages,
     isSelfEmployed,
     selfEmploymentIncome,
-    otherIncome,
+    interestAndDividends,
+    iraDistributions,
+    tiaaWithdrawals,
     shortTermCapitalGains,
     longTermCapitalGains,
     preTaxDeductions,
@@ -170,7 +172,9 @@ export function calculateTaxes(inputs: TaxInputs, yearData: YearTaxData): TaxRes
   const grossIncome = Math.max(0, wages)
     + Math.max(0, shortTermCapitalGains)
     + Math.max(0, longTermCapitalGains)
-    + Math.max(0, otherIncome)
+    + Math.max(0, interestAndDividends)
+    + Math.max(0, iraDistributions)
+    + Math.max(0, tiaaWithdrawals)
     + seIncome;
 
   // -------------------------------------------------------------------

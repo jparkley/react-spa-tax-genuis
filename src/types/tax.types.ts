@@ -76,7 +76,9 @@ export interface TaxInputs {
   wages: number;
   isSelfEmployed: boolean;
   selfEmploymentIncome: number;
-  otherIncome: number;
+  interestAndDividends: number;
+  iraDistributions: number;
+  tiaaWithdrawals: number;
   shortTermCapitalGains: number;
   longTermCapitalGains: number;
   preTaxDeductions: number;

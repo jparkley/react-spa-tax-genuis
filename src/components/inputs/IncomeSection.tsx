@@ -12,7 +12,9 @@ interface IncomeSectionProps {
     | 'wages'
     | 'isSelfEmployed'
     | 'selfEmploymentIncome'
-    | 'otherIncome'
+    | 'interestAndDividends'
+    | 'iraDistributions'
+    | 'tiaaWithdrawals'
     | 'preTaxDeductions'
     | 'traditionalIraContribution'
     | 'hasWorkplaceRetirementPlan'
@@ -58,10 +60,24 @@ export function IncomeSection({ inputs, setField, iraContributionLimit }: Income
       )}
 
       <CurrencyInput
-        label="Other Taxable Income"
-        value={inputs.otherIncome}
-        onChange={(v) => setField('otherIncome', v)}
-        helpText="Interest, dividends (ordinary), alimony, etc. — taxed as ordinary income."
+        label="Other Income 1 — Interest & Dividends"
+        value={inputs.interestAndDividends}
+        onChange={(v) => setField('interestAndDividends', v)}
+        helpText="Ordinary interest and dividends (1099-INT / 1099-DIV) — taxed at regular bracket rates."
+      />
+
+      <CurrencyInput
+        label="Other Income 2 — IRA Distributions"
+        value={inputs.iraDistributions}
+        onChange={(v) => setField('iraDistributions', v)}
+        helpText="Taxable IRA withdrawals (1099-R) — treated as ordinary income."
+      />
+
+      <CurrencyInput
+        label="Other Income 3 — TIAA Withdrawals"
+        value={inputs.tiaaWithdrawals}
+        onChange={(v) => setField('tiaaWithdrawals', v)}
+        helpText="TIAA retirement account distributions (1099-R) — treated as ordinary income."
       />
 
       <div className="flex items-center gap-1">
@@ -88,7 +104,7 @@ export function IncomeSection({ inputs, setField, iraContributionLimit }: Income
             value={inputs.traditionalIraContribution}
             onChange={(v) => setField('traditionalIraContribution', v)}
             max={iraContributionLimit}
-            helpText={`Limit: ${formatCurrency(iraContributionLimit)}${inputs.age50Plus ? ' (catch-up, age 50+)' : ''}. Deductibility may phase out if you have a workplace plan.`}
+            helpText={`Limit: ${formatCurrency(iraContributionLimit)}${inputs.age50Plus ? ' (catch-up, age 50+)' : ''}. MFJ with one spouse in a 401(k): fully deductible if MAGI ≤ $242,000 (2026).`}
           />
         </div>
         <div className="mt-5">
