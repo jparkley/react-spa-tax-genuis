@@ -174,6 +174,7 @@ export const taxData2026: YearTaxData = {
         qss:    { start: 236000, end: 246000 },
       },
     },
+    k401EmployeeLimit: 23500,
     ira: {
       contributionLimit:      7000,
       catchUpContributionLimit: 8000,

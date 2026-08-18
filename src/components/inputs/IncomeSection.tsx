@@ -28,16 +28,17 @@ interface IncomeSectionProps {
   magi: number;
   filingStatus: FilingStatus;
   rothPhaseOut: { start: number; end: number };
+  k401Limit: number;
 }
 
-export function IncomeSection({ inputs, setField, iraContributionLimit, magi, filingStatus, rothPhaseOut }: IncomeSectionProps) {
+export function IncomeSection({ inputs, setField, iraContributionLimit, magi, filingStatus, rothPhaseOut, k401Limit }: IncomeSectionProps) {
   return (
     <SectionCard title="Income">
       <CurrencyInput
-        label="W-2 Wages / Salary"
+        label="Gross W-2 Wages / Salary"
         value={inputs.wages}
         onChange={(v) => setField('wages', v)}
-        helpText="From W-2 Box 1 — gross pay minus pre-tax deductions (401k, HSA, FSA, etc.). Note: in 2025, it was $122,800."
+        helpText="Enter gross wages (before any deductions). W-2 Box 1 already has 401k/HSA/FSA subtracted — if using Box 1, set Pre-Tax Deductions to $0 below."
       />
 
       <Toggle
@@ -87,7 +88,7 @@ export function IncomeSection({ inputs, setField, iraContributionLimit, magi, fi
       <div className="flex items-center gap-1">
         <div className="flex-1">
           <CurrencyInput
-            label="Pre-Tax Deductions (401k / HSA / FSA)"
+            label={`Pre-Tax Deductions (401k max: ${formatCurrency(k401Limit)} / HSA / FSA)`}
             value={inputs.preTaxDeductions}
             onChange={(v) => setField('preTaxDeductions', v)}
           />

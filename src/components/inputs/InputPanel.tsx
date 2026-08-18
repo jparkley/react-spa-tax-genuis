@@ -36,6 +36,7 @@ export function InputPanel({ inputs, results, setField, onReset }: InputPanelPro
         magi={results.magi}
         filingStatus={inputs.filingStatus}
         rothPhaseOut={yearData.federal.rothIra.contributionPhaseOut[inputs.filingStatus]}
+        k401Limit={yearData.federal.k401EmployeeLimit}
       />
       <DeductionsSection
         inputs={inputs}

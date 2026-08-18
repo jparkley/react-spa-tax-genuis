@@ -65,6 +65,8 @@ export interface YearTaxData {
     childTaxCredit: ChildTaxCreditConfig;
     ira: IraConfig;
     rothIra: RothIraConfig;
+    /** Employee 401(k) / 403(b) contribution limit (elective deferral) */
+    k401EmployeeLimit: number;
   };
   california: {
     brackets: Record<FilingStatus, TaxBracket[]>;
